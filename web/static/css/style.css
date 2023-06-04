@@ -1,0 +1,22 @@
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+}
+
+.login-btn {
+    display: block;
+    margin: 10px auto;
+}
+
+h2 {
+    text-align: center;
+}

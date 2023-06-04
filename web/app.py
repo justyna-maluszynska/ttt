@@ -1,12 +1,17 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template
 import os
+from extensions import db
 
-db = SQLAlchemy()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
 
-@app.route('/')
+def register_extensions():
+    """Register extensions used in a flask application"""
+    db.init_app(app)
+    # socketio.init_app(app)
+
+
+@app.route('/', methods=["GET"])
 def home():
-    return "Hello, world!"
+    return render_template("home.html")
