@@ -20,3 +20,16 @@
 h2 {
     text-align: center;
 }
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.rooms {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

@@ -1,5 +1,8 @@
-{% extends 'base.html' %} {% block content %}
-<form method="post">
+{% extends 'base.html' %} {% block content %} {% if
+current_user.is_authenticated %}
+<div class="wrapper">{% include 'start.html' %}</div>
+{% else %}
+<form method="post" action="/">
   <h2>Tic Tac Toe</h2>
   <div class="login">
     <div>
@@ -23,4 +26,4 @@
   </ul>
   {% endif %}
 </form>
-{% endblock %}
+{% endif %} {% endblock %}

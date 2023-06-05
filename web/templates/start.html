@@ -1,0 +1,16 @@
+<div class="panel">
+  Hej, {{ current_user.username }}
+  <div class="rooms">
+    <div class="join-room">
+      <input type="text" placeholder="Room Code" name="code" value="{{code}}" />
+      <button type="submit" name="join">Join a Room</button>
+    </div>
+    <p>or</p>
+    <div class="create-room">
+      <button type="submit" name="join">Create a Room</button>
+    </div>
+  </div>
+  <div>
+    <button type="submit" name="logout"><a href="/logout">Logout</a></button>
+  </div>
+</div>
