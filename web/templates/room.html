@@ -1,0 +1,58 @@
+{% extends 'base.html' %}{% block content %}
+<div class="room">
+  Pokój {{ code }}
+  <div>
+    <h3>Waiting for other players</h3>
+  </div>
+  <div class="board-wrapper">
+    <div class="player_1">Player 1: {{ current_user.username }}</div>
+    <div class="board">
+      <div class="cell" onclick="makeMove(0, 0)"></div>
+      <div class="cell" onclick="makeMove(0, 1)"></div>
+      <div class="cell" onclick="makeMove(0, 2)"></div>
+      <div class="cell" onclick="makeMove(1, 0)"></div>
+      <div class="cell" onclick="makeMove(1, 1)"></div>
+      <div class="cell" onclick="makeMove(1, 2)"></div>
+      <div class="cell" onclick="makeMove(2, 0)"></div>
+      <div class="cell" onclick="makeMove(2, 1)"></div>
+      <div class="cell" onclick="makeMove(2, 2)"></div>
+    </div>
+    <div class="player_2">Player 2:</div>
+  </div>
+
+  <button type="submit" name="leave" onClick="leaveRoom()">Leave</button>
+</div>
+<script type="text/javascript">
+  var socketio = io.connect("http://" + document.domain + ":" + location.port);
+
+  var currentPlayer = "X";
+  var cells = document.querySelectorAll(".cell");
+
+  function makeMove(row, col) {
+    var cell = cells[row * 3 + col];
+    if (cell.textContent === "") {
+      cell.textContent = currentPlayer;
+      cell.style.backgroundColor = "#fff";
+
+      if (currentPlayer === "X") {
+        currentPlayer = "O";
+      } else {
+        currentPlayer = "X";
+      }
+    }
+  }
+
+  const leaveRoom = () => {
+    socketio.emit("leave", {
+      username: "{{current_user.username}}",
+      room: {{code}},
+    });
+    window.location.href = "{{ url_for('home') }}";
+  };
+
+  socketio.on("join", (data) => {
+    console.log("no co tam halo");
+    console.log(data);
+  });
+</script>
+{% endblock %}

@@ -1,8 +1,9 @@
-from flask import Flask, abort, redirect, render_template, request, flash
+from flask import Flask, abort, redirect, render_template, request, flash, url_for
 from extensions import db, login_manager, alembic, socketio
 from flask_login import login_required, login_user, logout_user
 from passlib.hash import sha256_crypt
-from models import Player
+from models import Player, Game, PlayerGame
+from flask_socketio import join_room, leave_room, send, emit
 
 
 app = Flask(__name__)
@@ -23,6 +24,57 @@ def home():
 def load_user(user_id):
     return db.session.execute(
         db.select(Player).filter_by(id=user_id)).scalar()
+
+
+@app.route("/room", methods=["POST"])
+@login_required
+def room():
+    code = request.form['code']
+
+    return render_template("room.html", code=code)
+
+
+@socketio.on('join')
+def on_join(data):
+    user_id = data['user_id']
+    room = data['room']
+
+    game = db.session.execute(db.select(Game).filter_by(
+        finished=False, in_progress=False, room_code=room)).scalar()
+    player = db.session.execute(
+        db.select(Player).filter_by(id=user_id)).scalar()
+
+    if game is None:
+        game = Game(room_code=room)
+        db.session.commit()
+
+    game.players.append(PlayerGame(player=player))
+    db.session.add(game)
+    db.session.commit()
+
+    join_room(room)
+    emit("join", {
+         "users": [player_game.player.username for player_game in game.players]}, room=room)
+
+
+@socketio.on('leave')
+def on_leave(data):
+    username = data['username']
+    room = data['room']
+
+    game = db.session.execute(
+        db.select(Game).filter_by(room_code=str(room))).scalar()
+    player = db.session.execute(
+        db.select(Player).filter_by(username=username)).scalar()
+
+    player_game = db.session.query(PlayerGame).filter_by(
+        player_id=player.id, game_id=game.id).first()
+    db.session.delete(player_game)
+    db.session.commit()
+
+    leave_room(room)
+    print(username + ' has left the room.')
+    emit("leave", {"user": username}, to=room)
 
 
 @app.route('/', methods=['GET', 'POST'])
