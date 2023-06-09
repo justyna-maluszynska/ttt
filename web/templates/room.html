@@ -2,10 +2,10 @@
 <div class="room">
   Pokój {{ code }}
   <div>
-    <h3>Waiting for other players</h3>
+    <h3 class="waiting-info">Waiting for other players...</h3>
   </div>
   <div class="board-wrapper">
-    <div class="player_1">Player 1: {{ current_user.username }}</div>
+    <p class="player_1">Player 1:</p>
     <div class="board">
       <div class="cell" onclick="makeMove(0, 0)"></div>
       <div class="cell" onclick="makeMove(0, 1)"></div>
@@ -20,15 +20,26 @@
     <div class="player_2">Player 2:</div>
   </div>
 
-  <button type="submit" name="leave" onClick="leaveRoom()">Leave</button>
+  <button type="submit" name="leave" onClick="handleLeave()">Leave</button>
 </div>
 <script type="text/javascript">
-  var socketio = io.connect("http://" + document.domain + ":" + location.port);
+  window.onload = function() {
+    const joinRoom = () => {
+      const code = {{ code }}
+
+      socketio.emit("join", {
+        user_id: {{current_user.id}},
+        room: {{code}},
+      });
+    }
+
+    joinRoom()
+  };
 
   var currentPlayer = "X";
   var cells = document.querySelectorAll(".cell");
 
-  function makeMove(row, col) {
+  const makeMove = (row, col) => {
     var cell = cells[row * 3 + col];
     if (cell.textContent === "") {
       cell.textContent = currentPlayer;
@@ -40,19 +51,35 @@
         currentPlayer = "X";
       }
     }
-  }
-
-  const leaveRoom = () => {
-    socketio.emit("leave", {
-      username: "{{current_user.username}}",
-      room: {{code}},
-    });
-    window.location.href = "{{ url_for('home') }}";
   };
 
   socketio.on("join", (data) => {
-    console.log("no co tam halo");
-    console.log(data);
+    document.querySelector(".player_1").innerHTML = `Player 1: ${data['users'][0]}`;
+    if(data['users'].length > 1)
+    {
+      document.querySelector(".player_2").innerHTML = `Player 2: ${data['users'][1]}`;
+      document.querySelector(".waiting-info").innerHTML = `Starting the game`;
+
+      const code = {{ code }};
+
+      socketio.emit("starting", {room: code});
+    }
   });
+
+  const leaveRoom = (username, code) => {
+    socketio.emit("leave", {
+      username: username,
+      room: code,
+    });
+  };
+
+
+  const handleLeave = () => {
+    const username = "{{ current_user.username }}"
+    const code = {{code}}
+
+    leaveRoom(username, code)
+    window.location.href = "{{ url_for('home') }}";
+  }
 </script>
 {% endblock %}

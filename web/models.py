@@ -7,6 +7,7 @@ class PlayerGame(db.Model):
     player_id = db.Column(db.ForeignKey('player.id'), primary_key=True)
     game_id = db.Column(db.ForeignKey('game.id'), primary_key=True)
     state = db.Column(db.String)
+    pawn = db.Column(db.String)
 
     player: db.Mapped["Player"] = db.relationship(back_populates="games")
     game: db.Mapped["Game"] = db.relationship(back_populates="players")
@@ -16,7 +17,8 @@ class Player(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
-    credits = db.Column(db.Integer)
+    credits = db.Column(db.Integer, default=10)
+    in_room = db.Column(db.Boolean)
 
     games: db.Mapped[List["PlayerGame"]] = db.relationship(
         back_populates="player")

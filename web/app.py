@@ -1,9 +1,12 @@
-from flask import Flask, abort, redirect, render_template, request, flash, url_for
+import random
+from flask import Flask, abort, redirect, render_template, request, flash
 from extensions import db, login_manager, alembic, socketio
 from flask_login import login_required, login_user, logout_user
 from passlib.hash import sha256_crypt
 from models import Player, Game, PlayerGame
-from flask_socketio import join_room, leave_room, send, emit
+from flask_socketio import join_room, leave_room, emit
+
+from utils import check_game_result
 
 
 app = Flask(__name__)
@@ -34,10 +37,10 @@ def room():
     return render_template("room.html", code=code)
 
 
-@socketio.on('join')
+@socketio.on('join', namespace='/room')
 def on_join(data):
     user_id = data['user_id']
-    room = data['room']
+    room = str(data['room'])
 
     game = db.session.execute(db.select(Game).filter_by(
         finished=False, in_progress=False, room_code=room)).scalar()
@@ -51,13 +54,13 @@ def on_join(data):
     game.players.append(PlayerGame(player=player))
     db.session.add(game)
     db.session.commit()
-
+    print(str(user_id) + ' has joined the room')
     join_room(room)
     emit("join", {
          "users": [player_game.player.username for player_game in game.players]}, room=room)
 
 
-@socketio.on('leave')
+@socketio.on('leave', namespace='/room')
 def on_leave(data):
     username = data['username']
     room = data['room']
@@ -75,6 +78,64 @@ def on_leave(data):
     leave_room(room)
     print(username + ' has left the room.')
     emit("leave", {"user": username}, to=room)
+
+
+@socketio.on("starting", namespace='/room')
+def starting(data):
+    room = data['room']
+
+    # TODO: wymyślić coś lepszego niz identygikowanie gry na podstawie room code, bo się będzie przeciez to potem nadpisywać
+    game = db.session.execute(
+        db.select(Game).filter_by(room_code=str(room))).scalar()
+
+    for player_game in game.players:
+        player_game.player.credits -= 3
+        player_game.pawn = 'X'
+
+    starting_player_game = random.choice(game.players)
+    starting_player_game.pawn = 'O'
+    starting_player = starting_player_game.player
+
+    db.session.add(game)
+    db.session.commit()
+
+    emit("starting", {"starting_player": starting_player.username})
+
+
+@socketio.on("move", namespace='/room')
+def on_move(data):
+    room = data['room']
+    board = data['board']
+
+    game = db.session.execute(
+        db.select(Game).filter_by(room_code=str(room))).scalar()
+
+    game_ended, winner = check_game_result(board)
+    winner_player = None
+    end_session = False
+
+    if game_ended:
+        game.finished = game_ended
+        game.in_progress = False
+        if winner == '':
+            game.draw = True
+            for player_game in game.players:
+                player_game.state = 'draw'
+        else:
+            for player_game in game.players:
+                if player_game.pawn == winner:
+                    player_game.state = 'winner'
+                    player_game.player.credits += 4
+                    winner_player = player_game.player
+                else:
+                    player_game.state = 'loser'
+
+            for player_game in game.players:
+                if player_game.player.credits == 0:
+                    end_session = True
+
+    emit('move', {'game_ended': game_ended,
+         'winner': winner_player.username if game_ended else '', 'end_session': end_session})
 
 
 @app.route('/', methods=['GET', 'POST'])

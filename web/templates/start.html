@@ -11,9 +11,7 @@
           value="{{code}}"
           required
         />
-        <button type="submit" name="join" onClick="joinRoom()">
-          Join a Room
-        </button>
+        <button type="submit" name="join">Join a Room</button>
       </form>
     </div>
   </div>
@@ -21,15 +19,3 @@
     <button type="submit" name="logout"><a href="/logout">Logout</a></button>
   </div>
 </div>
-<script type="text/javascript">
-  var socketio = io.connect("http://" + document.domain + ":" + location.port);
-
-  const joinRoom = () => {
-    const code = document.getElementById("code").value;
-    console.log(code);
-    socketio.emit("join", {
-      user_id: "{{current_user.id}}",
-      room: code,
-    });
-  };
-</script>
