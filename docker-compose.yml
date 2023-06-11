@@ -7,6 +7,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tic-tac-toe
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./data:/var/lib/postgresql/data
     ports:
@@ -15,11 +20,11 @@ services:
   web:
     build: .
     ports:
-      - 8000:5000
+      - 5000:5000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       FLASK_DEBUG: 1
-      FLASK_APP: ./app.py
-    volumes:
-      - ./web:/app
+    # volumes:
+    #   - ./web:/app

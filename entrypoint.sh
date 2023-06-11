@@ -1,5 +1,6 @@
 #!/bin/sh
 
-cd app/
-alembic upgrade
+cd web/
+flask db upgrade
+cd ..
 python run.py

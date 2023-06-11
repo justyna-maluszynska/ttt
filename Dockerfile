@@ -6,20 +6,13 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Skopiuj plik requirements.txt do kontenera
-COPY requirements.txt .
-
-# Zainstaluj zależności aplikacji
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Ustaw zmienne środowiskowe
-ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
-
-# Skopiuj resztę plików aplikacji do kontenera
 COPY . .
 
-COPY entrypoint.sh .
-ENTRYPOINT ["sh", "./entrypoint.sh"]
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENV FLASK_RUN_HOST=0.0.0.0
+
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["sh", "entrypoint.sh"]
 
 

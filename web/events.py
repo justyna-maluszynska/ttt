@@ -42,6 +42,7 @@ def on_leave(data):
     player_game = db.session.query(PlayerGame).filter_by(
         player_id=current_user.id, game_id=game.id).first()
     player_game.left = True
+    player_game.game.finished = True
 
     db.session.add(player_game)
     db.session.commit()
