@@ -30,9 +30,10 @@
     const joinRoom = () => {
       const code = {{ code }}
 
+      console.log("emit")
       socketio.emit("join", {
         user_id: {{current_user.id}},
-        room: {{code}},
+        session_id: {{ session_id }},
       });
     }
 
@@ -154,7 +155,7 @@
     const code = {{code}}
 
     leaveRoom(username, code)
-    window.location.href = "{{ url_for('home') }}";
+    window.location.href = "{{ url_for('routes.home') }}";
   }
 
   const handleNextGame = () => {

@@ -1,10 +1,10 @@
 from typing import List
-from extensions import db
+from web.extensions import db
 from flask_login import UserMixin
 
 
 class PlayerGame(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
     player_id = db.Column(db.ForeignKey('player.id'), nullable=False)
     game_id = db.Column(db.ForeignKey('game.id'), nullable=False)
     state = db.Column(db.String)
@@ -23,6 +23,8 @@ class Player(db.Model, UserMixin):
 
     games: db.Mapped[List["PlayerGame"]] = db.relationship(
         back_populates="player")
+    sessions: db.Mapped[List["Session"]] = db.relationship(
+        "Session", backref="player")
 
 
 class Game(db.Model):
@@ -39,4 +41,6 @@ class Game(db.Model):
 
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    games: db.Mapped[List["Game"]] = db.relationship(back_populates="session")
+    player_id = db.Column(db.ForeignKey('player.id'))
+
+    games: db.Mapped[List["Game"]] = db.relationship("Game", backref="session")
