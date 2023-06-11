@@ -3,17 +3,17 @@ version: '3.8'
 services:
   db:
     image: postgres
-    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tic-tac-toe
     volumes:
       - ./data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
 
   web:
-    build: ./web
-    restart: always
+    build: .
     ports:
       - 8000:5000
     depends_on:
