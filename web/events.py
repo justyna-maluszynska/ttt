@@ -7,7 +7,8 @@ from flask_socketio import join_room, leave_room, emit
 import random
 
 
-def check_sender(game):
+def check_sender(game: Game) -> bool:
+    """ Checks whether the sender was the user assigned to session """
     if game.session.player_id == current_user.id:
         return True
     return False
@@ -15,7 +16,7 @@ def check_sender(game):
 
 @socketio.on('join')
 def on_join(data):
-    session_id = data['session_id']
+    session_id = data.get('session_id')
 
     session = db.session.execute(
         db.select(Session).filter_by(id=session_id)).scalar()
@@ -34,7 +35,7 @@ def on_join(data):
 
 @socketio.on('leave')
 def on_leave(data):
-    game_id = data['game_id']
+    game_id = data.get('game_id')
 
     game = db.session.execute(db.select(Game).filter_by(id=game_id)).scalar()
 
@@ -49,11 +50,15 @@ def on_leave(data):
     print(current_user.username + ' has left the room.')
     emit("leave", to=game.room_code)
 
+    if check_sender(game):
+        game.session.closed = True
+        emit("exit", to=game.room_code)
+
 
 @socketio.on('next_game')
 def prepare_next_game(data):
     session_id = data.get('session_id')
-    room = data['room']
+    room = data.get('room')
 
     game = db.session.execute(
         db.select(Game).filter_by(session_id=session_id, finished=False)).scalar()
@@ -72,7 +77,7 @@ def prepare_next_game(data):
 
 @socketio.on("starting")
 def starting(data):
-    game_id = data['game_id']
+    game_id = data.get('game_id')
 
     game = db.session.execute(
         db.select(Game).filter_by(id=game_id)).scalar()
@@ -96,8 +101,8 @@ def starting(data):
 
 @socketio.on("move")
 def on_move(data):
-    game_id = data['game_id']
-    board = data['board']
+    game_id = data.get('game_id')
+    board = data.get('board')
 
     game = db.session.execute(db.select(Game).filter_by(id=game_id)).scalar()
 

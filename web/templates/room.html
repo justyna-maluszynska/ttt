@@ -130,6 +130,10 @@
     changeInfo(` Start the new game!`, true);
   })
 
+  socketio.on("exit", (data) => {
+    window.location.href = "{{ url_for('routes.home') }}";
+  })
+
   socketio.on("finish", (data) => {
     var winner = data["winner"]
     canStartGame = data["new_game"]
