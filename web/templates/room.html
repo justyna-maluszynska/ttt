@@ -86,7 +86,7 @@
       document.querySelector(".waiting-info").insertAdjacentHTML('beforeend', newInfo);
     }
     else {
-      changeInfo(newInfo);
+      document.querySelector(".waiting-info").innerHTML = newInfo;
     }
   };
 

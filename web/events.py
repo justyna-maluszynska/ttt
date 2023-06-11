@@ -1,3 +1,4 @@
+import datetime
 from flask_login import current_user
 from web.utils import check_game_result, end_game, can_start_new_game
 from web.extensions import socketio, db
@@ -19,7 +20,7 @@ def on_join(data):
     session = db.session.execute(
         db.select(Session).filter_by(id=session_id)).scalar()
     game = next(
-        game for game in session.games if not game.finished and not game.in_progress)
+        game for game in session.games if not game.finished)
 
     player_game = PlayerGame(player_id=current_user.id, game_id=game.id)
     db.session.add(player_game)
@@ -55,7 +56,7 @@ def prepare_next_game(data):
     room = data['room']
 
     game = db.session.execute(
-        db.select(Game).filter_by(session_id=session_id, in_progress=False, finished=False)).scalar()
+        db.select(Game).filter_by(session_id=session_id, finished=False)).scalar()
 
     if game is None:
         game = Game(session_id=session_id, room_code=room)
@@ -75,7 +76,7 @@ def starting(data):
 
     game = db.session.execute(
         db.select(Game).filter_by(id=game_id)).scalar()
-    if (check_sender(game)):
+    if check_sender(game):
         for player_game in game.players:
             player_game.player.credits -= 3
             player_game.pawn = 'X'
@@ -84,6 +85,7 @@ def starting(data):
         starting_player_game.pawn = 'O'
         starting_player = starting_player_game.player
 
+        game.start_time = datetime.datetime.now()
         db.session.add(game)
         db.session.commit()
 

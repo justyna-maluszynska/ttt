@@ -1,0 +1,34 @@
+{% extends 'base.html' %} {% block content %}
+<div class="stats">
+  Hej, {{ current_user.username }} {% for date, item in stats.items() %}
+  <div>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          {% for header in headers %}
+          <th>{{header}}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for date, item in stats.items() %}
+        <tr>
+          <td>{{date}}</td>
+          <td>{{ item.win }}</td>
+          <td>{{ item.lose }}</td>
+          <td>{{ item.draw }}</td>
+          <td>{{ item.count }}</td>
+          <td>{{ item.time_played }}</td>
+          <td>{{ item.win_ratio }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+  <div>
+    <button type="submit" name="logout"><a href="/home">Back</a></button>
+  </div>
+</div>
+{% endblock %}

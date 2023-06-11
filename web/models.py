@@ -20,7 +20,6 @@ class Player(db.Model, UserMixin):
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
     credits = db.Column(db.Integer, default=10)
-    in_room = db.Column(db.Boolean)
 
     games: db.Mapped[List["PlayerGame"]] = db.relationship(
         back_populates="player")
@@ -33,8 +32,9 @@ class Game(db.Model):
     room_code = db.Column(db.String, nullable=False)
     draw = db.Column(db.Boolean)
     finished = db.Column(db.Boolean, default=False)
-    in_progress = db.Column(db.Boolean, default=False)
     session_id = db.Column(db.ForeignKey("session.id"), nullable=False)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
 
     players: db.Mapped[List["PlayerGame"]
                        ] = db.relationship(back_populates="game")

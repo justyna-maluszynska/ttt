@@ -1,9 +1,10 @@
+import datetime
 from flask import Blueprint, abort, redirect, render_template, request, flash
 from flask_login import current_user, login_required, login_user, logout_user
 from web.extensions import db
 from passlib.hash import sha256_crypt
 from web.models import Game, Session, Player
-from web.utils import add_credits
+from web.utils import add_credits, get_stats
 
 routes = Blueprint("routes", __name__)
 
@@ -27,7 +28,7 @@ def room():
     code = request.form['code']
 
     game = db.session.execute(
-        db.select(Game).filter_by(room_code=code, finished=False, in_progress=False)).scalar()
+        db.select(Game).filter_by(room_code=code, finished=False)).scalar()
 
     if game is None:
         user_session = Session(player_id=current_user.id)
@@ -72,3 +73,12 @@ def login():
 def logout():
     logout_user()
     return redirect('/')
+
+
+@routes.route("/stats", methods=["GET"])
+@login_required
+def stats():
+    headers = ['Data', 'Wygrane', 'Przegrane',
+               'Remisy', 'Liczba gier', 'Czas', 'WR']
+    stats = get_stats(current_user)
+    return render_template('stats.html', stats=stats, headers=headers)
