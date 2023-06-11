@@ -3,13 +3,22 @@ from flask_login import current_user, login_required, login_user, logout_user
 from web.extensions import db
 from passlib.hash import sha256_crypt
 from web.models import Game, Session, Player
+from web.utils import add_credits
 
 routes = Blueprint("routes", __name__)
 
 
-@routes.route('/', methods=["GET"])
+@routes.route('/', methods=["GET", "POST"])
 def home():
-    return render_template("home.html")
+    if request.method == 'GET':
+        if current_user.is_authenticated:
+            return render_template("home.html", credits=current_user.credits)
+        return render_template("home.html")
+    if request.method == 'POST':
+        if current_user.is_authenticated:
+            add_credits(current_user)
+            return render_template("home.html", credits=current_user.credits)
+        return render_template("home.html")
 
 
 @routes.route("/room", methods=["POST"])
@@ -29,7 +38,7 @@ def room():
     db.session.add(game)
     db.session.commit()
 
-    return render_template("room.html", code=code, session_id=user_session.id)
+    return render_template("room.html", code=code, session_id=user_session.id, game_id=game.id)
 
 
 @routes.route('/', methods=['GET', 'POST'])

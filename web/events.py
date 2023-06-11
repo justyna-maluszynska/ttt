@@ -47,11 +47,9 @@ def on_leave(data):
 
 @socketio.on("starting")
 def starting(data):
-    room = data['room']
+    game_id = data['game_id']
 
-    # TODO: wymyślić coś lepszego niz identygikowanie gry na podstawie room code, bo się będzie przeciez to potem nadpisywać
-    game = db.session.execute(
-        db.select(Game).filter_by(room_code=str(room))).scalar()
+    game = db.session.execute(db.select(Game).filter_by(id=game_id)).scalar()
 
     for player_game in game.players:
         player_game.player.credits -= 3
@@ -64,6 +62,7 @@ def starting(data):
     db.session.add(game)
     db.session.commit()
 
+    print(f"starting game: {game_id}, room code: {game.room_code}")
     emit("starting", {"starting_player": starting_player.id})
 
 

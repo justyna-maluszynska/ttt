@@ -1,3 +1,6 @@
+from web.extensions import db
+
+
 def check_game_result(board):
     # Checking rows
     for row in board:
@@ -42,3 +45,10 @@ def can_start_new_game(players):
         if player.player.credits == 0:
             return False
     return True
+
+
+def add_credits(player):
+    if player.credits <= 0:
+        player.credits += 10
+        db.session.add(player)
+        db.session.commit()

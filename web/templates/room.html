@@ -80,7 +80,7 @@
       document.querySelector(".player_2").innerHTML = `Player 2: ${data['users'][1]}`;
       document.querySelector(".waiting-info").innerHTML = `Starting the game`;
 
-      socketio.emit("starting", { room: code });
+      socketio.emit("starting", { game_id: {{ game_id }} });
     }
   });
 
