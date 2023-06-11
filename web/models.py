@@ -4,8 +4,9 @@ from flask_login import UserMixin
 
 
 class PlayerGame(db.Model):
-    player_id = db.Column(db.ForeignKey('player.id'), primary_key=True)
-    game_id = db.Column(db.ForeignKey('game.id'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.ForeignKey('player.id'), nullable=False)
+    game_id = db.Column(db.ForeignKey('game.id'), nullable=False)
     state = db.Column(db.String)
     pawn = db.Column(db.String)
 
@@ -30,6 +31,7 @@ class Game(db.Model):
     draw = db.Column(db.Boolean)
     finished = db.Column(db.Boolean, default=False)
     in_progress = db.Column(db.Boolean, default=False)
+    session_id = db.Column(db.ForeignKey("session.id"), nullable=False)
 
     players: db.Mapped[List["PlayerGame"]
                        ] = db.relationship(back_populates="game")
@@ -37,3 +39,4 @@ class Game(db.Model):
 
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    games: db.Mapped[List["Game"]] = db.relationship(back_populates="session")

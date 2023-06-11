@@ -6,7 +6,7 @@ from passlib.hash import sha256_crypt
 from models import Player, Game, PlayerGame
 from flask_socketio import join_room, leave_room, emit
 
-from utils import check_game_result
+from utils import check_game_result, end_game, can_start_new_game
 
 
 app = Flask(__name__)
@@ -99,43 +99,36 @@ def starting(data):
     db.session.add(game)
     db.session.commit()
 
-    emit("starting", {"starting_player": starting_player.username})
+    emit("starting", {"starting_player": starting_player.id})
 
 
 @socketio.on("move", namespace='/room')
 def on_move(data):
-    room = data['room']
+    room = str(data['room'])
     board = data['board']
+    player_id = data['user_id']
 
     game = db.session.execute(
         db.select(Game).filter_by(room_code=str(room))).scalar()
 
-    game_ended, winner = check_game_result(board)
-    winner_player = None
-    end_session = False
+    current_player_game = next(
+        player_game for player_game in game.players if player_game.player_id == player_id)
+    next_player_game = next(
+        player_game for player_game in game.players if player_game.player_id != player_id)
+    state = check_game_result(board)
 
+    game_ended = state != ''
     if game_ended:
-        game.finished = game_ended
-        game.in_progress = False
-        if winner == '':
-            game.draw = True
-            for player_game in game.players:
-                player_game.state = 'draw'
-        else:
-            for player_game in game.players:
-                if player_game.pawn == winner:
-                    player_game.state = 'winner'
-                    player_game.player.credits += 4
-                    winner_player = player_game.player
-                else:
-                    player_game.state = 'loser'
+        end_game(game, current_player_game, next_player_game, state == 'draw')
+        new_game = can_start_new_game(game.players)
 
-            for player_game in game.players:
-                if player_game.player.credits == 0:
-                    end_session = True
-
-    emit('move', {'game_ended': game_ended,
-         'winner': winner_player.username if game_ended else '', 'end_session': end_session})
+        db.session.add(game)
+        db.session.commit()
+        emit('finish', {'winner': player_id,
+             'new_game': new_game, 'board': board, 'draw': state == 'draw'}, room=room)
+    else:
+        emit("move", {'next_player': next_player_game.player_id,
+                      'pawn': next_player_game.pawn, 'board': board}, room=room)
 
 
 @app.route('/', methods=['GET', 'POST'])

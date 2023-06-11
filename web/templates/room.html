@@ -20,6 +20,9 @@
     <div class="player_2">Player 2:</div>
   </div>
 
+  <button type="submit" name="next" onClick="handleNextGame()">
+    Next game
+  </button>
   <button type="submit" name="leave" onClick="handleLeave()">Leave</button>
 </div>
 <script type="text/javascript">
@@ -36,20 +39,36 @@
     joinRoom()
   };
 
-  var currentPlayer = "X";
+  const code = {{ code }};
+  const user_id = {{current_user.id}}
+  var currentPlayer = "";
+  var playerPawn = "";
   var cells = document.querySelectorAll(".cell");
+  var canStartGame = false;
+
+  const getBoard = () => {
+    const boardValues = [[], [], []];
+
+    cells.forEach((cell, index) => {
+      const x = Math.floor(index / 3)
+      const y = index % 3
+      boardValues[x].push(cell.textContent);
+    });
+
+    console.log(boardValues);
+    return boardValues;
+  }
 
   const makeMove = (row, col) => {
-    var cell = cells[row * 3 + col];
-    if (cell.textContent === "") {
-      cell.textContent = currentPlayer;
-      cell.style.backgroundColor = "#fff";
-
-      if (currentPlayer === "X") {
-        currentPlayer = "O";
-      } else {
-        currentPlayer = "X";
+    if(currentPlayer == {{current_user.id}})
+    {
+      var cell = cells[row * 3 + col];
+      if (cell.textContent === "") {
+        cell.textContent = playerPawn;
+        cell.style.backgroundColor = "#fff";
       }
+
+      socketio.emit('move', {room: code, user_id: user_id, board: getBoard()})
     }
   };
 
@@ -60,11 +79,67 @@
       document.querySelector(".player_2").innerHTML = `Player 2: ${data['users'][1]}`;
       document.querySelector(".waiting-info").innerHTML = `Starting the game`;
 
-      const code = {{ code }};
-
-      socketio.emit("starting", {room: code});
+      socketio.emit("starting", { room: code });
     }
   });
+
+  socketio.on("leave", (data) => {
+    document.querySelector(".player_1").innerHTML = `Player 1: ${data['users'][0]}`;
+  });
+
+  socketio.on("starting", (data) => {
+    currentPlayer = data["starting_player"]
+    if(currentPlayer == {{current_user.id}}){
+      playerPawn = "O"
+      document.querySelector(".waiting-info").innerHTML = `Your turn ${playerPawn}`;
+    }
+    else {
+      playerPawn = "X"
+      document.querySelector(".waiting-info").innerHTML = `It's opponent turn `;
+    }
+  })
+
+  socketio.on("move", (data) => {
+    currentPlayer = data["next_player"]
+    updateTextInfo()
+    updateBoard(data['board'])
+  })
+
+  socketio.on("finish", (data) => {
+    var winner = data["winner"]
+    canStartGame = data["new_game"]
+
+    if (data['state'] == 'draw'){
+      document.querySelector(".waiting-info").innerHTML = `Draw!`;
+    }
+    else if (user_id == winner){
+      document.querySelector(".waiting-info").innerHTML = `Winner winner chicken dinner! You won!`;
+    }
+    else {
+      document.querySelector(".waiting-info").innerHTML = `You lost!`;
+    }
+  })
+
+  const updateBoard = (board) => {
+    cells.forEach((cell, index) => {
+      const x = Math.floor(index / 3)
+      const y = index % 3
+      var value = board[x][y]
+      if (value != ""){
+        cell.textContent = board[x][y]
+        cell.style.backgroundColor = "#fff";
+      }
+    });
+  }
+
+  const updateTextInfo = () => {
+    if(currentPlayer == {{current_user.id}}){
+      document.querySelector(".waiting-info").innerHTML = `Your turn ${playerPawn}`;
+    }
+    else {
+      document.querySelector(".waiting-info").innerHTML = `It's opponent turn `;
+    }
+  }
 
   const leaveRoom = (username, code) => {
     socketio.emit("leave", {
@@ -80,6 +155,13 @@
 
     leaveRoom(username, code)
     window.location.href = "{{ url_for('home') }}";
+  }
+
+  const handleNextGame = () => {
+    if(canStartGame)
+    {
+      socketio.emit("starting", { room: code });
+    }
   }
 </script>
 {% endblock %}
