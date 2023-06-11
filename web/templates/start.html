@@ -1,3 +1,4 @@
+{% extends 'base.html' %} {% block content %}
 <div class="panel">
   Hej, {{ current_user.username }}
   <div class="rooms">
@@ -15,7 +16,7 @@
       </form>
     </div>
   </div>
-  <form method="post" action="/">
+  <form method="post" action="/home">
     <input
       type="text"
       placeholder="Credits"
@@ -30,3 +31,4 @@
     <button type="submit" name="logout"><a href="/logout">Logout</a></button>
   </div>
 </div>
+{% endblock %}

@@ -8,17 +8,17 @@ from web.utils import add_credits
 routes = Blueprint("routes", __name__)
 
 
-@routes.route('/', methods=["GET", "POST"])
+@routes.route('/home', methods=["GET", "POST"])
 def home():
     if request.method == 'GET':
         if current_user.is_authenticated:
-            return render_template("home.html", credits=current_user.credits)
-        return render_template("home.html")
+            return render_template("start.html", credits=current_user.credits)
+        return render_template("start.html")
     if request.method == 'POST':
         if current_user.is_authenticated:
             add_credits(current_user)
-            return render_template("home.html", credits=current_user.credits)
-        return render_template("home.html")
+            return render_template("start.html", credits=current_user.credits)
+        return render_template("start.html")
 
 
 @routes.route("/room", methods=["POST"])
@@ -44,25 +44,27 @@ def room():
 @routes.route('/', methods=['GET', 'POST'])
 def login():
     """Function log in user to the game app if he already has an account. Otherwise it creates a new account."""
-    username = request.form['username']
-    password = request.form['password']
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-    player = db.session.execute(
-        db.select(Player).filter_by(username=username)).scalar()
+        player = db.session.execute(
+            db.select(Player).filter_by(username=username)).scalar()
 
-    if player is not None:
-        if sha256_crypt.verify(password, player.password):
-            flash('Logged in successfully.')
+        if player is not None:
+            if sha256_crypt.verify(password, player.password):
+                flash('Logged in successfully.')
+            else:
+                return abort(401, description="Invalid password")
         else:
-            return abort(401, description="Invalid password")
-    else:
-        hash_password = sha256_crypt.encrypt(password)
-        player = Player(username=username, password=hash_password)
-        db.session.add(player)
-        db.session.commit()
+            hash_password = sha256_crypt.encrypt(password)
+            player = Player(username=username, password=hash_password)
+            db.session.add(player)
+            db.session.commit()
 
-    login_user(player)
-    return redirect("/")
+        login_user(player)
+        return redirect("/home")
+    return render_template("login.html")
 
 
 @routes.route("/logout")

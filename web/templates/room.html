@@ -46,6 +46,7 @@
   var playerPawn = "";
   var cells = document.querySelectorAll(".cell");
   var canStartGame = false;
+  var gameId = null;
 
   const getBoard = () => {
     const boardValues = [[], [], []];
@@ -60,6 +61,13 @@
     return boardValues;
   }
 
+  const clearBoard = () => {
+    cells.forEach((cell, index) => {
+      cell.textContent = "";
+      cell.style.backgroundColor = "#f0f0f0";
+    });
+  }
+
   const makeMove = (row, col) => {
     if(currentPlayer == {{current_user.id}})
     {
@@ -69,18 +77,28 @@
         cell.style.backgroundColor = "#fff";
       }
 
-      socketio.emit('move', {room: code, user_id: user_id, board: getBoard()})
+      socketio.emit('move', {game_id: gameId, board: getBoard()})
+    }
+  };
+
+  const changeInfo = (newInfo, append=false) => {
+    if(append){
+      document.querySelector(".waiting-info").insertAdjacentHTML('beforeend', newInfo);
+    }
+    else {
+      changeInfo(newInfo);
     }
   };
 
   socketio.on("join", (data) => {
+    gameId = data.game;
     document.querySelector(".player_1").innerHTML = `Player 1: ${data['users'][0]}`;
     if(data['users'].length > 1)
     {
       document.querySelector(".player_2").innerHTML = `Player 2: ${data['users'][1]}`;
-      document.querySelector(".waiting-info").innerHTML = `Starting the game`;
+      changeInfo(`Starting the game`);
 
-      socketio.emit("starting", { game_id: {{ game_id }} });
+      socketio.emit("starting", { game_id: gameId });
     }
   });
 
@@ -92,11 +110,11 @@
     currentPlayer = data["starting_player"]
     if(currentPlayer == {{current_user.id}}){
       playerPawn = "O"
-      document.querySelector(".waiting-info").innerHTML = `Your turn ${playerPawn}`;
+      changeInfo(`Your turn ${playerPawn}`);
     }
     else {
       playerPawn = "X"
-      document.querySelector(".waiting-info").innerHTML = `It's opponent turn `;
+      changeInfo(`It's opponent turn `);
     }
   })
 
@@ -106,19 +124,27 @@
     updateBoard(data['board'])
   })
 
+  socketio.on("next_game", (data) => {
+    gameId = data["game"]
+    console.log("zapisałem nowy game id")
+    changeInfo(` Start the new game!`, true);
+  })
+
   socketio.on("finish", (data) => {
     var winner = data["winner"]
     canStartGame = data["new_game"]
 
     if (data['state'] == 'draw'){
-      document.querySelector(".waiting-info").innerHTML = `Draw!`;
+      changeInfo(`Draw!`);
     }
     else if (user_id == winner){
-      document.querySelector(".waiting-info").innerHTML = `Winner winner chicken dinner! You won!`;
+      changeInfo(`Winner winner chicken dinner! You won!`);
     }
     else {
-      document.querySelector(".waiting-info").innerHTML = `You lost!`;
+      changeInfo(`You lost!`);
     }
+    socketio.emit("next_game", { session_id: {{ session_id }}, room: code })
+    clearBoard();
   })
 
   const updateBoard = (board) => {
@@ -135,33 +161,32 @@
 
   const updateTextInfo = () => {
     if(currentPlayer == {{current_user.id}}){
-      document.querySelector(".waiting-info").innerHTML = `Your turn ${playerPawn}`;
+      changeInfo(`Your turn ${playerPawn}`);
     }
     else {
-      document.querySelector(".waiting-info").innerHTML = `It's opponent turn `;
+      changeInfo(`It's opponent turn `);
     }
   }
 
-  const leaveRoom = (username, code) => {
+  const leaveRoom = () => {
     socketio.emit("leave", {
-      username: username,
-      room: code,
+      game_id: gameId
     });
   };
 
 
   const handleLeave = () => {
-    const username = "{{ current_user.username }}"
-    const code = {{code}}
-
-    leaveRoom(username, code)
+    leaveRoom()
     window.location.href = "{{ url_for('routes.home') }}";
-  }
+  };
 
   const handleNextGame = () => {
     if(canStartGame)
     {
-      socketio.emit("starting", { room: code });
+      socketio.emit("starting", { game_id: gameId });
+    }
+    else {
+      changeInfo(`New game cannot be started. Leave room and find new oponnent`);
     }
   }
 </script>

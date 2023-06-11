@@ -9,6 +9,7 @@ class PlayerGame(db.Model):
     game_id = db.Column(db.ForeignKey('game.id'), nullable=False)
     state = db.Column(db.String)
     pawn = db.Column(db.String)
+    left = db.Column(db.Boolean)
 
     player: db.Mapped["Player"] = db.relationship(back_populates="games")
     game: db.Mapped["Game"] = db.relationship(back_populates="players")
@@ -29,7 +30,7 @@ class Player(db.Model, UserMixin):
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    room_code = db.Column(db.String, nullable=False, unique=True)
+    room_code = db.Column(db.String, nullable=False)
     draw = db.Column(db.Boolean)
     finished = db.Column(db.Boolean, default=False)
     in_progress = db.Column(db.Boolean, default=False)
@@ -42,5 +43,6 @@ class Game(db.Model):
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     player_id = db.Column(db.ForeignKey('player.id'))
+    closed = db.Column(db.Boolean, default=False)
 
     games: db.Mapped[List["Game"]] = db.relationship("Game", backref="session")
